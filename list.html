@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>有料動画一覧｜AIちゃんねるDA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Shippori+Mincho:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0806;--bg-2:#13100c;--panel:#15110b;--line:#3a2f1c;--line-soft:#2a2114;
+  --gold:#9c7e44;--gold-bright:#c2a25e;--gold-dim:#6b5830;
+  --pp-bright:#a763e0;--tx:#cdc2a8;--tx-dim:#8f836a;--tx-mut:#675d49;
+  --radius:6px;--maxw:1280px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow-x:hidden}
+body{position:relative;background:var(--bg);
+  color:var(--tx);font-family:"Noto Sans JP",sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+img{display:block;width:100%;height:100%;object-fit:cover}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+.topbar{position:relative;padding:26px 0 14px;background:rgba(4,3,2,.50);border-bottom:1px solid rgba(201,164,92,.22);box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.brand{text-align:center;padding-bottom:18px;position:relative}
+.brand h1{font-family:"Cinzel","Shippori Mincho",serif;font-weight:700;font-size:clamp(28px,5vw,52px);letter-spacing:.06em;
+  background:linear-gradient(180deg,#c9b276,#9c7e44 45%,#5c4a25);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand .tagline{font-family:"Shippori Mincho",serif;color:var(--gold-dim);font-size:clamp(11px,1.6vw,15px);letter-spacing:.32em;margin-top:6px}
+/* nav framed (原画の金枠メニュー再現) */
+.nav{display:inline-flex;justify-content:center;align-items:center;gap:2px;flex-wrap:wrap;
+  padding:6px 10px;margin:4px auto 0;border:1px solid rgba(201,164,92,.45);border-radius:6px;
+  background:linear-gradient(180deg,rgba(20,15,9,.6),rgba(8,6,4,.5));
+  box-shadow:inset 0 0 18px rgba(201,164,92,.06),0 2px 12px rgba(0,0,0,.4);position:relative}
+.nav::before,.nav::after{content:"";position:absolute;top:50%;transform:translateY(-50%);
+  width:7px;height:7px;border:1px solid rgba(201,164,92,.5);border-radius:1px;rotate:45deg}
+.nav::before{left:-4px}.nav::after{right:-4px}
+.nav a{font-family:"Shippori Mincho",serif;font-size:14px;letter-spacing:.14em;color:var(--tx-dim);
+  padding:8px 18px;border-radius:3px;transition:.2s;position:relative}
+.nav a:hover,.nav a.active{color:var(--gold-bright);text-shadow:0 0 10px rgba(232,200,122,.4)}
+.nav a:not(:last-child)::after{content:"";position:absolute;right:0;top:50%;transform:translateY(-50%);
+  width:1px;height:16px;background:rgba(201,164,92,.25)}
+.nav-wrap{display:flex;justify-content:center}
+
+.crumb{padding:16px 0;color:var(--tx-mut);font-size:12px;letter-spacing:.1em}
+.crumb a:hover{color:var(--gold-bright)}
+
+.main{padding:14px 0 60px}
+.layout{display:grid;grid-template-columns:220px 1fr;gap:28px}
+
+/* side filter */
+.filter{border:1px solid var(--line);border-radius:var(--radius);padding:20px 16px;align-self:start;
+  background:linear-gradient(180deg,var(--panel),var(--bg-2))}
+.filter h4{font-family:"Shippori Mincho",serif;font-size:15px;color:var(--gold);text-align:center;letter-spacing:.16em;
+  padding-bottom:14px;margin-bottom:6px;border-bottom:1px solid var(--line-soft)}
+.filter button{display:block;width:100%;text-align:center;margin:8px 0;padding:11px;cursor:pointer;
+  font-family:"Shippori Mincho",serif;font-size:13px;letter-spacing:.12em;color:var(--tx-dim);
+  background:linear-gradient(180deg,rgba(30,24,14,.6),rgba(14,10,6,.4));
+  border:1px solid var(--line-soft);border-radius:4px;transition:.2s}
+.filter button:hover,.filter button.on{color:var(--gold-bright);border-color:var(--gold-dim);box-shadow:0 0 14px rgba(201,164,92,.12)}
+
+/* panel */
+.panel{border:1px solid var(--line);border-radius:var(--radius);padding:24px;
+  background:linear-gradient(180deg,rgba(28,22,12,.5),rgba(12,9,6,.3))}
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.panel-head h2{font-family:"Shippori Mincho",serif;font-size:20px;color:var(--tx);letter-spacing:.08em;display:flex;align-items:center;gap:10px}
+.panel-head h2 .mk{color:var(--gold)}
+.panel-head a{font-size:12px;color:var(--gold-dim)}
+.panel-head a:hover{color:var(--gold-bright)}
+
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.card{cursor:pointer;transition:.22s}
+.card .thumb{position:relative;aspect-ratio:16/10;overflow:hidden;border-radius:4px;border:1px solid var(--line-soft)}
+.card .thumb img{transition:.4s}
+.card:hover .thumb img{transform:scale(1.06)}
+.card:hover{transform:translateY(-3px)}
+.badge{position:absolute;top:8px;left:8px;z-index:2;font-family:"Cinzel",serif;font-size:10px;letter-spacing:.08em;padding:3px 9px;border-radius:3px}
+.badge.premium{color:#1a1206;background:linear-gradient(180deg,var(--gold-bright),var(--gold));border:1px solid var(--gold-bright)}
+.badge.free{color:var(--tx);background:rgba(20,16,10,.7);border:1px solid var(--line)}
+.dur{position:absolute;bottom:8px;right:8px;z-index:2;font-size:11px;padding:2px 6px;border-radius:3px;background:rgba(0,0,0,.78);color:#e9ddc4}
+.card .ttl{margin-top:9px;font-size:13px;line-height:1.5;color:var(--tx);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .meta{margin-top:4px;font-size:11px;color:var(--tx-mut)}
+
+.pager{display:flex;justify-content:center;gap:8px;margin-top:34px}
+.pager a{min-width:38px;text-align:center;padding:9px;border:1px solid var(--line-soft);border-radius:4px;font-size:13px;color:var(--tx-dim);transition:.2s}
+.pager a:hover,.pager a.on{color:var(--gold-bright);border-color:var(--gold-dim)}
+
+.foot{border-top:1px solid var(--line-soft);padding:30px 0;text-align:center;color:var(--tx-mut);font-size:12px;letter-spacing:.1em}
+
+@media(max-width:980px){.layout{grid-template-columns:1fr}
+  .filter{display:flex;flex-wrap:wrap;gap:8px}.filter h4{width:100%}.filter button{width:auto;flex:1;min-width:90px;margin:0}}
+@media(max-width:780px){.cards{grid-template-columns:repeat(2,1fr)}.nav a{padding:8px 12px;font-size:13px}}
+@media(max-width:480px){.cards{grid-template-columns:repeat(2,1fr);gap:12px}.panel{padding:16px}}
+.site-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:url("bg_frame.webp") center top/cover no-repeat;
+  background-attachment:fixed;}
+.site-bg::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(70% 60% at 50% 42%, rgba(8,6,4,.0) 0%, rgba(8,6,4,.55) 78%, rgba(8,6,4,.8) 100%);}
+.col{display:none !important;position:fixed;top:0;bottom:0;width:64px;z-index:1;pointer-events:none;
+  background:linear-gradient(90deg, rgba(0,0,0,.7), rgba(40,32,18,.3) 50%, rgba(0,0,0,.6)),repeating-linear-gradient(0deg, rgba(201,164,92,.06) 0 2px, transparent 2px 18px),linear-gradient(180deg,#1a140c,#0d0a06);
+  border-right:1px solid rgba(201,164,92,.12);border-left:1px solid rgba(201,164,92,.12)}
+.col.l{left:0}.col.r{right:0}
+.col::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:6px;transform:translateX(-50%);background:linear-gradient(180deg,transparent,rgba(201,164,92,.18),transparent)}
+.torch{display:none !important;position:fixed;top:34vh;width:64px;z-index:2;pointer-events:none;text-align:center}
+.torch.l{left:0}.torch.r{right:0}
+.torch .flame{font-size:26px;line-height:1;filter:drop-shadow(0 0 14px rgba(255,160,40,.8));animation:flick 1.6s ease-in-out infinite}
+.torch .halo{position:absolute;left:50%;top:-30px;transform:translateX(-50%);width:140px;height:160px;background:radial-gradient(circle, rgba(255,150,40,.22), transparent 65%);}
+@keyframes flick{0%,100%{transform:translateY(0) scale(1);opacity:1}50%{transform:translateY(-2px) scale(1.08);opacity:.85}}
+@media(max-width:1080px){.col,.torch{display:none}}
+.topbar,.main,.foot,.crumb{position:relative;z-index:3}
+.topbar::after{content:none}
+.brand::before,.brand::after{content:"\2756";position:absolute;top:14px;color:var(--gold-dim);font-size:18px;opacity:.6}
+.brand::before{left:8%}.brand::after{right:8%}
+@media(max-width:780px){.brand::before,.brand::after{display:none}}
+
+
+.nav-wrap{display:flex;justify-content:center;align-items:center;gap:18px;flex-wrap:wrap;padding-top:4px}
+.login{font-family:"Shippori Mincho",serif;font-size:15px;letter-spacing:.14em;color:var(--tx);
+  padding:8px 16px;transition:.2s}
+.login:hover{color:var(--gold-bright)}
+
+
+
+
+
+/* ===== distress v4: 明るさ復元 + 傷を前面で確実に ===== */
+/* dark-veil/grain-veil/vignette は撤去。傷だけ前面に出す */
+
+/* フィルムグレインを前面に薄く(質感) */
+.grain-veil{position:fixed;inset:0;z-index:49;pointer-events:none;opacity:.07;
+  background-image:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:200px 200px;mix-blend-mode:overlay}
+/* 枠は傷んだ古金(維持・控えめ) */
+.nav,.filter,.panel,.cta,.pop,.ann,.filter button,.pager a,.desc{
+  border-color:rgba(120,98,52,.5)!important}
+
+
+/* ===== distress animation (控えめ) ===== */
+@media (prefers-reduced-motion: no-preference){
+  /* 枠・ボタンの輪郭が常時微動 */
+  .nav,.filter button,.pager a,.badge.premium,.badge-prem,.rel-badge,.cta .btn{
+    filter:url(#distort)}
+  /* タイトルの金が揺らめくシマー */
+  .brand h1{
+    background:linear-gradient(100deg,#5c4a25 0%,#9c7e44 30%,#e8d39a 48%,#9c7e44 66%,#5c4a25 100%);
+    background-size:280% 100%;
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:goldShimmer 7s ease-in-out infinite}
+  @keyframes goldShimmer{
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}}
+  /* sec見出しの金マークも微シマー */
+  .sec-title .mk,.related h3 .mk,.panel-head h2 .mk{animation:markFlick 5s steps(1) infinite}
+  @keyframes markFlick{0%,92%,100%{opacity:1}94%{opacity:.5}96%{opacity:.9}}
+  /* グリッチ/ノイズのちらつき(前面グレインを動かす) */
+  .grain-veil{animation:grainShift .9s steps(3) infinite}
+  @keyframes grainShift{
+    0%{transform:translate(0,0)}33%{transform:translate(-3%,2%)}66%{transform:translate(2%,-2%)}100%{transform:translate(0,0)}}
+  /* 稀に走る軽いグリッチ(タイトル) */
+  .brand h1::after{content:"";position:absolute;inset:0;pointer-events:none}
+  .brand{animation:titleGlitch 1.8s steps(1) infinite}
+  @keyframes titleGlitch{0%,70%,100%{transform:translateX(0);filter:none;opacity:1}72%{transform:translate(-3px,1px) skewX(-3deg);filter:contrast(1.5) hue-rotate(-8deg);opacity:.85}74%{transform:translate(3px,-1px) skewX(4deg);filter:contrast(1.4) brightness(1.2)}76%{transform:translate(-2px,0);filter:none}78%{transform:translate(2px,1px) skewX(-2deg);clip-path:inset(20% 0 30% 0)}80%{transform:translate(0,0);clip-path:inset(0 0 0 0)}88%{transform:translate(1px,-1px);filter:contrast(1.3)}90%{transform:translate(0,0);filter:none}}
+    97%{transform:translateX(-1px)}
+    98%{transform:translateX(1.5px);filter:contrast(1.2)}
+    99%{transform:translateX(-0.5px)}}
+}
+
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="distort" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="7" result="noise">
+      <animate attributeName="baseFrequency" dur="14s" repeatCount="indefinite"
+        values="0.012 0.018; 0.016 0.013; 0.012 0.018" calcMode="spline"
+        keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"/>
+    </feTurbulence>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.2" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="distort-strong" x="-8%" y="-8%" width="116%" height="116%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.02 0.03" numOctaves="2" seed="3" result="n2">
+      <animate attributeName="baseFrequency" dur="9s" repeatCount="indefinite"
+        values="0.02 0.03; 0.028 0.02; 0.02 0.03"/>
+    </feTurbulence>
+    <feDisplacementMap in="SourceGraphic" in2="n2" scale="3.2"/>
+  </filter>
+</svg>
+<div class="site-bg"></div>
+<div class="grain-veil"></div>
+<div class="col l"></div><div class="col r"></div>
+<div class="torch l"><div class="halo"></div><div class="flame">🔥</div></div>
+<div class="torch r"><div class="halo"></div><div class="flame">🔥</div></div>
+<header class="topbar"><div class="wrap">
+  <div class="brand"><h1>AIちゃんねるDA</h1><div class="tagline">沈黙は、気づいた瞬間から崩れる。</div></div>
+  <div class="nav-wrap">
+    <nav class="nav">
+      <a href="index.html">ホーム</a><a href="#">無料動画</a>
+      <a href="list.html" class="active">有料動画</a><a href="#">お知らせ</a>
+    </nav>
+    <a href="#" class="login">Login</a>
+  </div>
+</div></header>
+
+<div class="wrap crumb"><a href="index.html">ホーム</a> › 有料動画 › お知らせ一覧</div>
+
+<main class="main"><div class="wrap layout">
+  <aside class="filter">
+    <h4>絞り込み</h4>
+    <button>新着順</button>
+    <button>無料動画</button>
+    <button class="on">人気順</button>
+    <button>カテゴリ</button>
+    <button>再生回数</button>
+    <button>視聴中</button>
+  </aside>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2><span class="mk">✦</span>有料動画一覧</h2>
+      <a href="#">すべて見る ›</a>
+    </div>
+    <div class="cards" id="grid"></div>
+    <div class="pager">
+      <a class="on">1</a><a>2</a><a>3</a><a>4</a><a>›</a>
+    </div>
+  </section>
+</div></main>
+
+<footer class="foot">© 2026 AIちゃんねるDA — All Rights Reserved.</footer>
+
+<script>
+const ph=(c1='2a1840',c2='0a0608')=>`data:image/svg+xml;utf8,`+encodeURIComponent(
+ `<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200'>
+  <defs><radialGradient id='g' cx='50%' cy='42%' r='75%'>
+  <stop offset='0%' stop-color='#${c1}'/><stop offset='100%' stop-color='#${c2}'/></radialGradient></defs>
+  <rect width='320' height='200' fill='url(#g)'/>
+  <circle cx='160' cy='90' r='34' fill='none' stroke='#a763e0' stroke-width='1.5' opacity='.5'/>
+  <circle cx='160' cy='90' r='13' fill='#a763e0' opacity='.4'/></svg>`);
+const pal=['2a1840','4a2850','3a2060','5a2838','4a3018','2e1a44'];
+const titles=[
+  '07_権力が真理に転化する','06_闇に堕ちる女性','洗脳のメカニズムを徹底解説',
+  '大日本帝国 語られる闇側_91','闇に潜む大鏡の女','虚像が現実を侵食する',
+  '04_美しき緋袴の甘い罠','光の祭壇に集う者たち','02_仮面に踊らされる人々',
+  '03_造られた常識の檻','沈黙の神殿で語られた真実','支配者が描いた地図',
+];
+document.getElementById('grid').innerHTML=titles.map((t,i)=>{
+  const free=i%5===1;
+  const dur=(15+(i*3)%14)+':'+String(10+(i*7)%49).padStart(2,'0');
+  const v=(Math.floor(Math.random()*90)+10)+','+Math.floor(Math.random()*900+100);
+  return `<a class="card" href="watch.html"><div class="thumb">
+   <span class="badge ${free?'free':'premium'}">${free?'Free':'Premium'}</span>
+   <span class="dur">${dur}</span><img src="${ph(pal[i%pal.length])}"></div>
+   <div class="ttl">${t}</div><div class="meta">${v} 回視聴</div></a>`;
+}).join('');
+</script>
+</body>
+</html>

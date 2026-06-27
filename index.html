@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIちゃんねるDA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Shippori+Mincho:wght@500;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* base */
+  --bg:#0a0806;
+  --bg-2:#13100c;
+  --panel:#15110b;
+  --panel-2:#1c160e;
+  --line:#3a2f1c;
+  --line-soft:#2a2114;
+  /* gold */
+  --gold:#9c7e44;
+  --gold-bright:#c2a25e;
+  --gold-dim:#6b5830;
+  /* purple glow */
+  --pp:#7b4ea8;
+  --pp-bright:#a763e0;
+  --pp-glow:rgba(140,80,210,.55);
+  /* text */
+  --tx:#cdc2a8;
+  --tx-dim:#8f836a;
+  --tx-mut:#675d49;
+  /* premium / free */
+  --premium:#caa45a;
+  --free:#b9ad93;
+  --radius:6px;
+  --maxw:1280px;
+  --shadow:0 18px 50px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow-x:hidden}
+body{position:relative;background:var(--bg);
+  color:var(--tx);
+  font-family:"Noto Sans JP",sans-serif;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.site-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:url("bg_frame.webp") center top/cover no-repeat;
+  background-attachment:fixed;}
+.site-bg::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(70% 60% at 50% 42%, rgba(8,6,4,.0) 0%, rgba(8,6,4,.55) 78%, rgba(8,6,4,.8) 100%);}
+/* ornamental side columns */
+.col{display:none !important;position:fixed;top:0;bottom:0;width:64px;z-index:1;pointer-events:none;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.7), rgba(40,32,18,.3) 50%, rgba(0,0,0,.6)),
+    repeating-linear-gradient(0deg, rgba(201,164,92,.06) 0 2px, transparent 2px 18px),
+    linear-gradient(180deg,#1a140c,#0d0a06);
+  border-right:1px solid rgba(201,164,92,.12);border-left:1px solid rgba(201,164,92,.12)}
+.col.l{left:0}.col.r{right:0}
+.col::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:6px;transform:translateX(-50%);
+  background:linear-gradient(180deg,transparent,rgba(201,164,92,.18),transparent)}
+/* torch */
+.torch{display:none !important;position:fixed;top:34vh;width:64px;z-index:2;pointer-events:none;text-align:center}
+.torch.l{left:0}.torch.r{right:0}
+.torch .flame{font-size:26px;line-height:1;filter:drop-shadow(0 0 14px rgba(255,160,40,.8));
+  animation:flick 1.6s ease-in-out infinite}
+.torch .halo{position:absolute;left:50%;top:-30px;transform:translateX(-50%);width:140px;height:160px;
+  background:radial-gradient(circle, rgba(255,150,40,.22), transparent 65%);}
+@keyframes flick{0%,100%{transform:translateY(0) scale(1);opacity:1}50%{transform:translateY(-2px) scale(1.08);opacity:.85}}
+@media(max-width:1080px){.col,.torch{display:none}}
+.topbar,.main,.foot{position:relative;z-index:3}
+img{display:block;width:100%;height:100%;object-fit:cover}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+
+/* ornamental frame helper */
+.framed{
+  position:relative;
+  border:1px solid var(--line);
+  background:linear-gradient(180deg,var(--panel) 0%,var(--bg-2) 100%);
+  border-radius:var(--radius);
+}
+.framed::before{
+  content:"";position:absolute;inset:5px;border:1px solid var(--line-soft);
+  border-radius:3px;pointer-events:none;
+}
+
+/* ===== HEADER ===== */
+.topbar{
+  position:relative;
+  padding:26px 0 14px;
+  background:rgba(4,3,2,.50);
+  
+  border-bottom:1px solid rgba(201,164,92,.22);
+  box-shadow:0 6px 24px rgba(0,0,0,.5);
+}
+/* gilded frame across header bottom */
+.topbar::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;
+  background:linear-gradient(90deg,transparent,rgba(201,164,92,.5) 20%,rgba(232,200,122,.7) 50%,rgba(201,164,92,.5) 80%,transparent)}
+.brand::before,.brand::after{content:"❖";position:absolute;top:14px;color:var(--gold-dim);font-size:18px;opacity:.6}
+.brand::before{left:8%}.brand::after{right:8%}
+@media(max-width:780px){.brand::before,.brand::after{display:none}}
+.brand{text-align:center;position:relative;padding-bottom:18px}
+.brand h1{
+  font-family:"Cinzel","Shippori Mincho",serif;
+  font-weight:700;
+  font-size:clamp(30px,5vw,56px);
+  letter-spacing:.06em;
+  background:linear-gradient(180deg,#c9b276 0%,#9c7e44 45%,#5c4a25 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 2px 18px rgba(201,164,92,.25);
+}
+.brand .tagline{
+  font-family:"Shippori Mincho",serif;
+  color:var(--gold-dim);font-size:clamp(11px,1.6vw,15px);
+  letter-spacing:.32em;margin-top:6px;
+}
+/* nav framed (原画の金枠メニュー再現) */
+.nav{display:inline-flex;justify-content:center;align-items:center;gap:2px;flex-wrap:wrap;
+  padding:6px 10px;margin:4px auto 0;border:1px solid rgba(201,164,92,.45);border-radius:6px;
+  background:linear-gradient(180deg,rgba(20,15,9,.6),rgba(8,6,4,.5));
+  box-shadow:inset 0 0 18px rgba(201,164,92,.06),0 2px 12px rgba(0,0,0,.4);position:relative}
+.nav::before,.nav::after{content:"";position:absolute;top:50%;transform:translateY(-50%);
+  width:7px;height:7px;border:1px solid rgba(201,164,92,.5);border-radius:1px;rotate:45deg}
+.nav::before{left:-4px}.nav::after{right:-4px}
+.nav a{font-family:"Shippori Mincho",serif;font-size:14px;letter-spacing:.14em;color:var(--tx-dim);
+  padding:8px 18px;border-radius:3px;transition:.2s;position:relative}
+.nav a:hover,.nav a.active{color:var(--gold-bright);text-shadow:0 0 10px rgba(232,200,122,.4)}
+.nav a:not(:last-child)::after{content:"";position:absolute;right:0;top:50%;transform:translateY(-50%);
+  width:1px;height:16px;background:rgba(201,164,92,.25)}
+.nav-wrap{display:flex;justify-content:center}
+
+/* ===== LAYOUT ===== */
+.main{padding:34px 0 60px}
+.grid{display:grid;grid-template-columns:1fr 320px;gap:26px}
+
+/* section heading */
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sec-title{display:flex;align-items:baseline;gap:12px}
+.sec-title .mk{color:var(--gold);font-size:18px}
+.sec-title h2{
+  font-family:"Shippori Mincho",serif;font-weight:700;
+  font-size:20px;color:var(--tx);letter-spacing:.08em;
+}
+.sec-title .en{font-size:11px;letter-spacing:.28em;color:var(--tx-mut);font-family:"Cinzel",serif}
+.see-all{font-size:12px;color:var(--gold-dim);letter-spacing:.1em;transition:.2s}
+.see-all:hover{color:var(--gold-bright)}
+
+/* video card grid */
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.card{cursor:pointer;transition:.22s}
+.card .thumb{
+  position:relative;aspect-ratio:16/10;overflow:hidden;border-radius:4px;
+  border:1px solid var(--line-soft);
+}
+.card .thumb img{transition:.4s}
+.card:hover .thumb img{transform:scale(1.06)}
+.card:hover{transform:translateY(-3px)}
+.badge{
+  position:absolute;top:8px;left:8px;z-index:2;
+  font-family:"Cinzel",serif;font-size:10px;letter-spacing:.08em;
+  padding:3px 9px;border-radius:3px;backdrop-filter:blur(4px);
+}
+.badge.premium{color:#1a1206;background:linear-gradient(180deg,var(--gold-bright),var(--gold));border:1px solid var(--gold-bright)}
+.badge.free{color:var(--tx);background:rgba(20,16,10,.7);border:1px solid var(--line)}
+.dur{
+  position:absolute;bottom:8px;right:8px;z-index:2;
+  font-size:11px;padding:2px 6px;border-radius:3px;
+  background:rgba(0,0,0,.78);color:#e9ddc4;letter-spacing:.04em;
+}
+.card .ttl{
+  margin-top:9px;font-size:13px;line-height:1.5;color:var(--tx);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.card .meta{margin-top:4px;font-size:11px;color:var(--tx-mut)}
+
+/* premium block wrapper */
+.premium-block{margin-top:40px;padding:24px;border:1px solid var(--line);border-radius:var(--radius);
+  background:linear-gradient(180deg,rgba(28,22,12,.55),rgba(12,9,6,.3));
+  box-shadow:inset 0 0 60px rgba(120,70,200,.04)}
+.premium-block .cards{grid-template-columns:repeat(5,1fr)}
+
+/* ===== SIDEBAR ===== */
+.search{
+  display:flex;align-items:center;gap:8px;padding:12px 14px;margin-bottom:24px;
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:linear-gradient(180deg,var(--panel),var(--bg-2));
+}
+.search input{
+  flex:1;background:transparent;border:0;outline:0;color:var(--tx);
+  font-size:13px;font-family:inherit;
+}
+.search input::placeholder{color:var(--tx-mut)}
+.search .ic{color:var(--gold);font-size:15px}
+
+.pop{padding:18px;border:1px solid var(--line);border-radius:var(--radius);
+  background:linear-gradient(180deg,var(--panel),var(--bg-2))}
+.pop .sec-title{margin-bottom:16px}
+.pop-item{display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line-soft);cursor:pointer;transition:.2s}
+.pop-item:last-child{border-bottom:0}
+.pop-item:hover .pi-ttl{color:var(--gold-bright)}
+.pop-rank{font-family:"Cinzel",serif;font-size:20px;color:var(--gold-dim);width:22px;text-align:center;flex:none}
+.pop-thumb{width:74px;height:46px;flex:none;border-radius:3px;overflow:hidden;position:relative;border:1px solid var(--line-soft)}
+.pop-thumb .d{position:absolute;bottom:2px;right:2px;font-size:9px;background:rgba(0,0,0,.8);padding:1px 4px;border-radius:2px}
+.pi-ttl{font-size:12px;line-height:1.45;color:var(--tx);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;transition:.2s}
+.pi-meta{font-size:10px;color:var(--tx-mut);margin-top:3px}
+
+/* announcements */
+.ann{margin-top:40px;padding:24px;border:1px solid var(--line);border-radius:var(--radius);
+  background:linear-gradient(180deg,rgba(20,16,10,.6),rgba(10,8,6,.3))}
+.ann-row{display:flex;align-items:center;gap:18px;padding:14px 4px;border-bottom:1px solid var(--line-soft);cursor:pointer;transition:.2s}
+.ann-row:last-child{border-bottom:0}
+.ann-row:hover{padding-left:10px;color:var(--gold-bright)}
+.ann-date{font-family:"Cinzel",serif;font-size:12px;color:var(--gold-dim);width:64px;flex:none}
+.ann-txt{font-size:13px;color:var(--tx-dim);flex:1}
+.ann-arrow{color:var(--tx-mut);font-size:14px}
+
+/* CTA */
+.cta{margin-top:24px;padding:24px;border:1px solid var(--gold-dim);border-radius:var(--radius);
+  background:linear-gradient(180deg,rgba(40,30,14,.5),rgba(14,10,6,.4));position:relative;overflow:hidden}
+.cta h3{font-family:"Shippori Mincho",serif;font-size:18px;color:var(--gold-bright);margin-bottom:8px}
+.cta p{font-size:12px;color:var(--tx-dim);margin-bottom:16px;line-height:1.6}
+.cta .btn{
+  display:block;text-align:center;padding:13px;border-radius:4px;
+  font-family:"Shippori Mincho",serif;font-weight:700;letter-spacing:.08em;
+  color:#1a1206;background:linear-gradient(180deg,var(--gold-bright),var(--gold));
+  border:1px solid var(--gold-bright);transition:.2s;cursor:pointer;
+}
+.cta .btn:hover{filter:brightness(1.1);box-shadow:0 6px 20px rgba(201,164,92,.3)}
+.cta .gear{position:absolute;right:-10px;top:-10px;font-size:60px;color:rgba(201,164,92,.12)}
+
+/* footer */
+.foot{border-top:1px solid var(--line-soft);padding:30px 0;text-align:center;color:var(--tx-mut);font-size:12px;letter-spacing:.1em}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:1080px){
+  .grid{grid-template-columns:1fr}
+  .premium-block .cards{grid-template-columns:repeat(4,1fr)}
+}
+@media(max-width:780px){
+  .cards{grid-template-columns:repeat(2,1fr)}
+  .premium-block .cards{grid-template-columns:repeat(2,1fr)}
+  .nav{gap:2px}
+  .nav a{padding:8px 12px;font-size:13px}
+  .nav a.login{margin-left:4px}
+  .nav .sep{display:none}
+}
+@media(max-width:480px){
+  .cards{grid-template-columns:repeat(2,1fr);gap:12px}
+  .main{padding:24px 0 40px}
+  .premium-block{padding:16px}
+  .ann,.pop{padding:16px}
+}
+
+.nav-wrap{display:flex;justify-content:center;align-items:center;gap:18px;flex-wrap:wrap;padding-top:4px}
+.login{font-family:"Shippori Mincho",serif;font-size:15px;letter-spacing:.14em;color:var(--tx);
+  padding:8px 16px;transition:.2s}
+.login:hover{color:var(--gold-bright)}
+
+
+
+
+
+/* ===== distress v4: 明るさ復元 + 傷を前面で確実に ===== */
+/* dark-veil/grain-veil/vignette は撤去。傷だけ前面に出す */
+
+/* フィルムグレインを前面に薄く(質感) */
+.grain-veil{position:fixed;inset:0;z-index:49;pointer-events:none;opacity:.07;
+  background-image:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:200px 200px;mix-blend-mode:overlay}
+/* 枠は傷んだ古金(維持・控えめ) */
+.nav,.filter,.panel,.cta,.pop,.ann,.filter button,.pager a,.desc{
+  border-color:rgba(120,98,52,.5)!important}
+
+
+/* ===== distress animation (控えめ) ===== */
+@media (prefers-reduced-motion: no-preference){
+  /* 枠・ボタンの輪郭が常時微動 */
+  .nav,.filter button,.pager a,.badge.premium,.badge-prem,.rel-badge,.cta .btn{
+    filter:url(#distort)}
+  /* タイトルの金が揺らめくシマー */
+  .brand h1{
+    background:linear-gradient(100deg,#5c4a25 0%,#9c7e44 30%,#e8d39a 48%,#9c7e44 66%,#5c4a25 100%);
+    background-size:280% 100%;
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:goldShimmer 7s ease-in-out infinite}
+  @keyframes goldShimmer{
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}}
+  /* sec見出しの金マークも微シマー */
+  .sec-title .mk,.related h3 .mk,.panel-head h2 .mk{animation:markFlick 5s steps(1) infinite}
+  @keyframes markFlick{0%,92%,100%{opacity:1}94%{opacity:.5}96%{opacity:.9}}
+  /* グリッチ/ノイズのちらつき(前面グレインを動かす) */
+  .grain-veil{animation:grainShift .9s steps(3) infinite}
+  @keyframes grainShift{
+    0%{transform:translate(0,0)}33%{transform:translate(-3%,2%)}66%{transform:translate(2%,-2%)}100%{transform:translate(0,0)}}
+  /* 稀に走る軽いグリッチ(タイトル) */
+  .brand h1::after{content:"";position:absolute;inset:0;pointer-events:none}
+  .brand{animation:titleGlitch 1.8s steps(1) infinite}
+  @keyframes titleGlitch{0%,70%,100%{transform:translateX(0);filter:none;opacity:1}72%{transform:translate(-3px,1px) skewX(-3deg);filter:contrast(1.5) hue-rotate(-8deg);opacity:.85}74%{transform:translate(3px,-1px) skewX(4deg);filter:contrast(1.4) brightness(1.2)}76%{transform:translate(-2px,0);filter:none}78%{transform:translate(2px,1px) skewX(-2deg);clip-path:inset(20% 0 30% 0)}80%{transform:translate(0,0);clip-path:inset(0 0 0 0)}88%{transform:translate(1px,-1px);filter:contrast(1.3)}90%{transform:translate(0,0);filter:none}}
+    97%{transform:translateX(-1px)}
+    98%{transform:translateX(1.5px);filter:contrast(1.2)}
+    99%{transform:translateX(-0.5px)}}
+}
+
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="distort" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="7" result="noise">
+      <animate attributeName="baseFrequency" dur="14s" repeatCount="indefinite"
+        values="0.012 0.018; 0.016 0.013; 0.012 0.018" calcMode="spline"
+        keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"/>
+    </feTurbulence>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.2" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="distort-strong" x="-8%" y="-8%" width="116%" height="116%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.02 0.03" numOctaves="2" seed="3" result="n2">
+      <animate attributeName="baseFrequency" dur="9s" repeatCount="indefinite"
+        values="0.02 0.03; 0.028 0.02; 0.02 0.03"/>
+    </feTurbulence>
+    <feDisplacementMap in="SourceGraphic" in2="n2" scale="3.2"/>
+  </filter>
+</svg>
+<div class="site-bg"></div>
+<div class="grain-veil"></div>
+<div class="col l"></div><div class="col r"></div>
+<div class="torch l"><div class="halo"></div><div class="flame">🔥</div></div>
+<div class="torch r"><div class="halo"></div><div class="flame">🔥</div></div>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">
+      <h1>AIちゃんねるDA</h1>
+      <div class="tagline">沈黙は、気づいた瞬間から崩れる。</div>
+    </div>
+    <div class="nav-wrap">
+      <nav class="nav">
+        <a href="index.html" class="active">ホーム</a>
+        <a href="#">無料動画</a>
+        <a href="list.html">有料動画</a>
+        <a href="#">お知らせ</a>
+      </nav>
+      <a href="#" class="login">Login</a>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="wrap grid">
+    <!-- LEFT -->
+    <div class="content">
+
+      <!-- 無料動画 -->
+      <section>
+        <div class="sec-head">
+          <div class="sec-title">
+            <span class="mk">✦</span>
+            <h2>無料動画</h2><span class="en">FREE VIDEOS</span>
+          </div>
+          <a class="see-all" href="#">すべて見る ›</a>
+        </div>
+        <div class="cards" id="freeCards"></div>
+      </section>
+
+      <!-- 有料動画 -->
+      <section class="premium-block">
+        <div class="sec-head">
+          <div class="sec-title">
+            <span class="mk">✦</span>
+            <h2>有料動画</h2><span class="en">PREMIUM VIDEOS</span>
+          </div>
+          <a class="see-all" href="list.html">すべて見る ›</a>
+        </div>
+        <div class="cards" id="premCards"></div>
+      </section>
+
+      <!-- お知らせ -->
+      <section class="ann">
+        <div class="sec-title" style="margin-bottom:8px">
+          <span class="mk">✦</span><h2>お知らせ</h2><span class="en">ANNOUNCEMENTS</span>
+        </div>
+        <div id="annList"></div>
+      </section>
+    </div>
+
+    <!-- RIGHT -->
+    <aside class="sidebar">
+      <div class="search">
+        <span class="ic">⚲</span>
+        <input type="text" placeholder="キーワードを入力...">
+      </div>
+
+      <div class="pop">
+        <div class="sec-title">
+          <span class="mk">✦</span><h2>人気の動画</h2><span class="en">POPULAR</span>
+        </div>
+        <div id="popList"></div>
+      </div>
+
+      <div class="cta">
+        <span class="gear">⚙</span>
+        <h3>プレミアム会員になろう</h3>
+        <p>限定動画の視聴や先行公開など特典が満載。</p>
+        <a class="btn" href="#">プレミアム会員に登録する</a>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer class="foot">© 2026 AIちゃんねるDA — All Rights Reserved.</footer>
+
+<script>
+// ---- placeholder data (WordPress化時はこの配列をDB/カスタム投稿に置換) ----
+const ph = (s,c1='2a1840',c2='0a0608')=>`data:image/svg+xml;utf8,`+encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='320' height='200'>
+   <defs><radialGradient id='g' cx='50%' cy='40%' r='70%'>
+   <stop offset='0%' stop-color='#${c1}'/><stop offset='100%' stop-color='#${c2}'/></radialGradient></defs>
+   <rect width='320' height='200' fill='url(#g)'/>
+   <circle cx='160' cy='95' r='34' fill='none' stroke='#a763e0' stroke-width='1.5' opacity='.5'/>
+   <circle cx='160' cy='95' r='14' fill='#a763e0' opacity='.35'/>
+   <text x='160' y='160' fill='#5a4a78' font-size='11' text-anchor='middle' font-family='serif'>${s}</text></svg>`);
+
+const free=[
+  {t:'大日本帝国 語られる闇側_91 @brahnwashing',d:'14:25'},
+  {t:'洗脳（DJTwitter）アカウントを削除しました',d:'23:12'},
+  {t:'【真_AIちゃんねるDA 発掘シリーズ 第2話】',d:'22:11',c:'5a2838'},
+  {t:'洗脳のメカニズムを徹底解説 ―意識を支配する6つのステップ―',d:'25:34'},
+];
+const prem=[
+  {t:'07_権力が真理に転化する',d:'14:25'},
+  {t:'06_闇に堕ちる女性',d:'26:35'},
+  {t:'04_美しき緋袴の甘い罠',d:'03:12',c:'4a2850'},
+  {t:'03_造られた常識の檻',d:'21:00'},
+  {t:'02_仮面に踊らされる人々',d:'23:06'},
+];
+const pop=[
+  {n:1,t:'07_権力が真理に転化する',v:'129,408',d:'14:25'},
+  {n:2,t:'大日本帝国 語られる闇側_91 @brahnwashing',v:'95,601',d:'23:54'},
+  {n:3,t:'洗脳のメカニズムを徹底解説 ―意識を支配する6つのステップ―',v:'87,892',d:'25:34'},
+  {n:4,t:'【真_AIちゃんねるDA 発掘シリーズ 第2話】',v:'79,300',d:'22:11',c:'5a2838'},
+  {n:5,t:'06_闇に堕ちる女性',v:'63,459',d:'26:35'},
+];
+const ann=[
+  {d:'10月27日',t:'システムメンテナンスのお知らせ（10月27日）'},
+  {d:'10月27日',t:'新機能追加のお知らせ'},
+  {d:'10月15日',t:'利用規約改定のお知らせ'},
+];
+const views=()=>(Math.floor(Math.random()*90)+10)+','+Math.floor(Math.random()*900+100);
+
+document.getElementById('freeCards').innerHTML=free.map(v=>`
+  <div class="card"><div class="thumb"><span class="badge free">Free</span>
+  <span class="dur">${v.d}</span><img src="${ph(v.t.slice(0,8),v.c)}" alt=""></div>
+  <div class="ttl">${v.t}</div><div class="meta">${views()} 回視聴</div></div>`).join('');
+
+document.getElementById('premCards').innerHTML=prem.map(v=>`
+  <a class="card" href="watch.html"><div class="thumb"><span class="badge premium">Premium</span>
+  <span class="dur">${v.d}</span><img src="${ph(v.t.slice(0,8),v.c)}" alt=""></div>
+  <div class="ttl">${v.t}</div><div class="meta">${views()} 回視聴</div></a>`).join('');
+
+document.getElementById('popList').innerHTML=pop.map(v=>`
+  <div class="pop-item"><div class="pop-rank">${v.n}</div>
+  <div class="pop-thumb"><img src="${ph('',v.c)}" alt=""><span class="d">${v.d}</span></div>
+  <div><div class="pi-ttl">${v.t}</div><div class="pi-meta">${v.v} 回視聴</div></div></div>`).join('');
+
+document.getElementById('annList').innerHTML=ann.map(a=>`
+  <div class="ann-row"><span class="ann-date">${a.d}</span>
+  <span class="ann-txt">${a.t}</span><span class="ann-arrow">›</span></div>`).join('');
+</script>
+</body>
+</html>
